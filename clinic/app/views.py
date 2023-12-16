@@ -3,6 +3,7 @@ from rest_framework.views import APIView
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.contrib.auth import authenticate
+from django.db.models import Q
 from .models import Doctor, Appointment, Clinic
 from django.db.utils import IntegrityError
 from django.contrib.auth.decorators import login_required
@@ -26,25 +27,6 @@ def create_doctor(request):
     }
     clinic = Clinic.objects.get(id=data['clinic_id'])
     doctor = Doctor.objects.create(first_name=data['first_name'], last_name=data['last_name'], middle_name=data['middle_name'], clinic=clinic)
-
-    interval = timedelta(minutes=15)
-    start_time = time(hour=9, minute=0)
-    end_time = time(hour=19, minute=45)
-
-    current_date = datetime.now().date()
-    end_date = current_date + timedelta(days=7)
-
-    while current_date < end_date:
-        current_time = datetime.combine(current_date, start_time)
-        while current_time.time() < end_time:
-            appointment = Appointment(
-                doctor=doctor,
-                date=current_date,
-                time=current_time
-            )
-            appointment.save()
-            current_time += interval
-        current_date += timedelta(days=1)
 
     return Response('Doctor was created successfully, id: ' + str(doctor.id))
 
@@ -87,12 +69,11 @@ def appointment_list(request):
     doctor = Doctor.objects.get(id=doctor_id)
     if not doctor:
         return Response("Incorrect doctor ID!")
-    current_datetime = timezone.now()
-    available_appointments = Appointment.objects.filter(
-        doctor=doctor,
-        date__gte=current_datetime.date(),
-        user__isnull=True
-    )
+
+    delete_passed_appointments(doctor)
+    generate_appointments(doctor)
+
+    available_appointments = Appointment.objects.filter(doctor=doctor, user__isnull=True)
     if not available_appointments:
         return Response("There are no available appointments")
     serializer = AppointmentSerializer(available_appointments, many=True)
@@ -167,3 +148,36 @@ def self_appointment_list(request):
     print(appointments)
     serializer = AppointmentSerializer(appointments, many=True)
     return Response(serializer.data)
+
+
+def delete_passed_appointments(doctor: Doctor):
+    current_datetime = datetime.now()
+    passed_appointments = Appointment.objects.filter(
+        Q(date__lt=current_datetime.date()) |
+        (Q(date=current_datetime.date()) & Q(time__lt=current_datetime.time())),
+        doctor=doctor,)
+    if passed_appointments.exists():
+        passed_appointments.delete()
+
+
+def generate_appointments(doctor: Doctor):
+    interval = timedelta(minutes=15)
+    start_time = time(hour=9, minute=0)
+    end_time = time(hour=19, minute=45)
+
+    current_date = datetime.now().date()
+    end_date = current_date + timedelta(days=7)
+
+    while current_date < end_date:
+        existing_appointments = Appointment.objects.filter(doctor=doctor, date=current_date)
+        if not existing_appointments.exists():
+            current_time = datetime.combine(current_date, start_time)
+            while current_time.time() < end_time:
+                appointment = Appointment(
+                    doctor=doctor,
+                    date=current_date,
+                    time=current_time.time()
+                )
+                appointment.save()
+                current_time += interval
+        current_date += timedelta(days=1)
