@@ -12,55 +12,6 @@ from datetime import datetime, timedelta, time
 from .serializers import AppointmentSerializer, DoctorSerializer, ClinicSerializer
 
 
-@api_view(('POST',))
-def book(request):
-    if not request.user:
-        return Response("Authorization error, try login again!")
-
-    appointment = Appointment.objects.get(pk=request.data.get("id"))
-    if not appointment.user:
-        appointment.user = request.user
-        appointment.save()
-        return Response(f"Appointment for {appointment.date} at {appointment.time} was booked successfully")
-    else:
-        return Response(f"Appointment for {appointment.date} at {appointment.time} is already booked! Choose a different appointment!")
-
-
-@api_view(('POST',))
-def cancel(request):
-    if not request.user:
-        return Response("Authorization error, try login again!")
-
-    appointment = Appointment.objects.get(pk=request.data.get("id"))
-    if not appointment.user:
-        return Response(f"Appointment for {appointment.date} at {appointment.time} is not booked!")
-    elif appointment.user != request.user:
-        return Response(f"Appointment for {appointment.date} at {appointment.time} is booked by another user!")
-    else:
-        appointment.user = None
-        appointment.save()
-        return Response(f"Appointment for {appointment.date} at {appointment.time} is now available for booking!")
-
-
-@api_view(('GET',))
-def appointment_list(request):
-    if not request.user:
-        return Response("Authorization error, try login again!")
-    doctor_id = request.data.get("doctor")
-    doctor = Doctor.objects.get(id=doctor_id)
-    if not doctor:
-        return Response("Incorrect doctor ID!")
-
-    delete_passed_appointments(doctor)
-    generate_appointments(doctor)
-
-    available_appointments = Appointment.objects.filter(doctor=doctor, user__isnull=True)
-    if not available_appointments:
-        return Response("There are no available appointments")
-    serializer = AppointmentSerializer(available_appointments, many=True)
-    return Response(serializer.data)
-
-
 @api_view(('POST', 'GET', 'PUT', 'DELETE'))
 def doctor(request):
     if not request.user:
@@ -198,6 +149,63 @@ def clinic(request):
                 return Response(serializer.data)
 
 
+@api_view(('POST',))
+def book(request):
+    if not request.user:
+        return Response("Authorization error, try login again!")
+    try:
+        appointment = Appointment.objects.get(pk=request.data.get("id"))
+    except Appointment.DoesNotExist:
+        return Response("Incorrect appointment ID")
+
+    if not appointment.user:
+        appointment.user = request.user
+        appointment.save()
+        return Response(f"Appointment for {appointment.date} at {appointment.time} was booked successfully")
+    else:
+        return Response(f"Appointment for {appointment.date} at {appointment.time} is already booked! Choose a different appointment!")
+
+
+@api_view(('POST',))
+def cancel(request):
+    if not request.user:
+        return Response("Authorization error, try login again!")
+
+    try:
+        appointment = Appointment.objects.get(pk=request.data.get("id"))
+    except Appointment.DoesNotExist:
+        return Response("Incorrect appointment ID")
+
+    if not appointment.user:
+        return Response(f"Appointment for {appointment.date} at {appointment.time} is not booked!")
+    elif appointment.user != request.user:
+        return Response(f"Appointment for {appointment.date} at {appointment.time} is booked by another user!")
+    else:
+        appointment.user = None
+        appointment.save()
+        return Response(f"Appointment for {appointment.date} at {appointment.time} is now available for booking!")
+
+
+@api_view(('GET',))
+def appointment_list(request):
+    if not request.user:
+        return Response("Authorization error, try login again!")
+    doctor_id = request.data.get("doctor_id")
+    try:
+        doctor = Doctor.objects.get(id=doctor_id)
+    except Doctor.DoesNotExist:
+        return Response("Incorrect doctor ID!")
+
+    delete_passed_appointments(doctor)
+    generate_appointments(doctor)
+
+    available_appointments = Appointment.objects.filter(doctor=doctor, user__isnull=True)
+    if not available_appointments:
+        return Response("There are no available appointments")
+    serializer = AppointmentSerializer(available_appointments, many=True)
+    return Response(serializer.data)
+
+
 @api_view(('GET',))
 def self_appointment_list(request):
     if not request.user:
@@ -207,6 +215,8 @@ def self_appointment_list(request):
     serializer = AppointmentSerializer(appointments, many=True)
     return Response(serializer.data)
 
+
+############################### HELPERS FUNCTIONS ############################################################################
 
 def delete_passed_appointments(doctor: Doctor):
     current_datetime = datetime.now()
