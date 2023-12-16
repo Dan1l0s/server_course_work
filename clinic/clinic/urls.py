@@ -18,8 +18,10 @@ from django.contrib import admin
 from django.urls import path, include
 
 from clinic_auth.urls import urlpatterns as clinic_auth_urls
+from app.urls import urlpatterns as app_urls
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include(clinic_auth_urls))
+    path('', include(clinic_auth_urls)),
+    path('', include(app_urls))
 ]
