@@ -1,0 +1,31 @@
+asgiref             3.7.2
+certifi             2023.11.17
+charset-normalizer  3.3.2
+contourpy           1.2.0
+cycler              0.12.1
+Django      
+django-cleanup    
+django-cors-headers
+djangorestframework
+fonttools         
+idna           
+kiwisolver      
+matplotlib     
+mysqlclient     
+numpy          
+packaging     
+Pillow         
+pip            
+psycopg2        
+PyJWT           
+pyparsing         
+python-dateutil   
+pytz               
+requests         
+setuptools      
+six            
+sqlparse        
+typing_extensions  
+tzdata            
+urllib3            
+wget 

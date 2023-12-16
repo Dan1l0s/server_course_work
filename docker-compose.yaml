@@ -1,0 +1,21 @@
+version: "3"
+
+services:
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: 1234
+    volumes:
+      - ./docker/init.sql:/docker-entrypoint-initdb.d/init.sql
+    ports:
+      - '5432:5432'
+  # python:
+  #   depends_on:
+  #     - postgres
+  #   build:
+  #     context: ./
+  #     dockerfile: docker/Dockerfile
+  #   ports:
+  #     - '8888:8888'
+  #   command: bash -c "python clinic/manage.py makemigrations && python clinic/manage.py migrate && python clinic/manage.py runserver 0.0.0.0:8080 "
