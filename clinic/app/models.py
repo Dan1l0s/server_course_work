@@ -15,8 +15,6 @@ class Doctor(models.Model):
     id = models.AutoField(primary_key=True)
 
     clinic = models.ForeignKey(Clinic, blank=True, null=True, on_delete=models.SET_NULL)
-    # TODO:
-    # available appointments
 
     first_name = models.CharField(max_length=255)
     middle_name = models.CharField(max_length=255)
@@ -30,12 +28,6 @@ class Doctor(models.Model):
 
     def get_short_name(self):
         return f'{self.last_name} {self.first_name[0]}. {self.middle_name[0]}'
-
-    def get_available_dates(self):
-        pass
-
-    def get_available_time(self):
-        pass
 
 
 class Appointment(models.Model):
