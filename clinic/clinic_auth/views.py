@@ -1,12 +1,10 @@
-from django.shortcuts import render
-from rest_framework.views import APIView
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-# from .serializer import UserSerializer
 from django.contrib.auth import authenticate
-from .models import User
 from django.db.utils import IntegrityError
-from django.contrib.auth.decorators import login_required
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
+
+from app.permissions import IsAuthenticated
+from .models import User
 
 
 @api_view(('POST',))
@@ -23,7 +21,7 @@ def login(request):
 
 
 @api_view(('POST',))
-def register(request):
+def signup(request):
     data = {
         'email': request.data.get("email"),
         'password': request.data.get("password"),
@@ -35,44 +33,38 @@ def register(request):
         return Response('This email is already taken')
 
 
-@api_view(('GET',))
-def who(request):
-    if not request.user:
-        return Response("Authorization error, try login again!")
-    return Response(request.user.get_full_name())
-
-
-@api_view(('PUT',))
+@api_view(('PUT', 'GET'))
+@permission_classes([IsAuthenticated])
 def edit(request):
     if not request.user:
         return Response("Authorization error, try login again!")
 
-    data = {
-        'email': request.data.get("email"),
-        'password': request.data.get("password"),
-        'first_name': request.data.get("first_name"),
-        'last_name': request.data.get("last_name"),
-        'middle_name': request.data.get("middle_name")
-    }
+    match request.method:
+        case "GET":
+            return Response(request.user.get_full_name())
 
-    ff = False
-    if data['email']:
-        request.user.email = data['email']
-        ff = True
-    if data['password']:
-        request.user.password = data['password']
-        ff = True
-    if data['first_name']:
-        request.user.first_name = data['first_name']
-        ff = True
-    if data['last_name']:
-        request.user.last_name = data['last_name']
-        ff = True
-    if data['middle_name']:
-        request.user.middle_name = data['middle_name']
-        ff = True
-    request.user.save()
+        case "PUT":
+            data = {
+                'email': request.data.get("email"),
+                'password': request.data.get("password"),
+                'first_name': request.data.get("first_name"),
+                'last_name': request.data.get("last_name"),
+                'middle_name': request.data.get("middle_name")
+            }
 
-    if ff:
-        return Response("Updated successfully!")
-    return Response("You need to provide at least 1 field!")
+            if not data['email'] and not data['password'] and not data['last_name'] and not data['first_name'] and not data['middle_name']:
+                return Response("You need to provide at least 1 field!")
+
+            if data['email']:
+                request.user.email = data['email']
+            if data['password']:
+                request.user.password = data['password']
+            if data['first_name']:
+                request.user.first_name = data['first_name']
+            if data['last_name']:
+                request.user.last_name = data['last_name']
+            if data['middle_name']:
+                request.user.middle_name = data['middle_name']
+
+            request.user.save()
+            return Response("Updated successfully!")

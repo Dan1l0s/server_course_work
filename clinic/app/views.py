@@ -1,18 +1,15 @@
-from django.shortcuts import render
-from rest_framework.views import APIView
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from django.contrib.auth import authenticate
 from django.db.models import Q
-from .models import Doctor, Appointment, Clinic
-from django.db.utils import IntegrityError
-from django.contrib.auth.decorators import login_required
-from django.utils import timezone
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.response import Response
 from datetime import datetime, timedelta, time
+
+from .models import Doctor, Appointment, Clinic
 from .serializers import AppointmentSerializer, DoctorSerializer, ClinicSerializer
+from .permissions import IsAdminOrReadOnly
 
 
 @api_view(('POST', 'GET', 'PUT', 'DELETE'))
+@permission_classes([IsAdminOrReadOnly])
 def doctor(request):
     if not request.user:
         return Response("Authorization error, try login again!")
@@ -96,6 +93,7 @@ def doctor(request):
 
 
 @api_view(('POST', 'GET', 'PUT', 'DELETE'))
+@permission_classes([IsAdminOrReadOnly])
 def clinic(request):
     if not request.user:
         return Response("Authorization error, try login again!")
@@ -150,6 +148,7 @@ def clinic(request):
 
 
 @api_view(('POST',))
+@permission_classes([IsAdminOrReadOnly])
 def book(request):
     if not request.user:
         return Response("Authorization error, try login again!")
@@ -167,6 +166,7 @@ def book(request):
 
 
 @api_view(('POST',))
+@permission_classes([IsAdminOrReadOnly])
 def cancel(request):
     if not request.user:
         return Response("Authorization error, try login again!")
@@ -187,6 +187,7 @@ def cancel(request):
 
 
 @api_view(('GET',))
+@permission_classes([IsAdminOrReadOnly])
 def appointment_list(request):
     if not request.user:
         return Response("Authorization error, try login again!")
@@ -207,6 +208,7 @@ def appointment_list(request):
 
 
 @api_view(('GET',))
+@permission_classes([IsAdminOrReadOnly])
 def self_appointment_list(request):
     if not request.user:
         return Response("Authorization error, try login again!")
