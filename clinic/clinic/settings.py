@@ -83,7 +83,7 @@ DATABASES = {
         'NAME': 'clinic_db',
         'USER': 'root',
         'PASSWORD': '1234',
-        'HOST': 'localhost',
+        'HOST': 'postgres',
         'PORT': '5432',
     }
 }

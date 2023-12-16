@@ -1,8 +1,8 @@
-asgiref             3.7.2
-certifi             2023.11.17
-charset-normalizer  3.3.2
-contourpy           1.2.0
-cycler              0.12.1
+asgiref
+certifi
+charset-normalizer
+contourpy
+cycler
 Django      
 django-cleanup    
 django-cors-headers
@@ -26,6 +26,6 @@ setuptools
 six            
 sqlparse        
 typing_extensions  
-tzdata            
-urllib3            
-wget 
+tzdata 
+urllib3
+wget

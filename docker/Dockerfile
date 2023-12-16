@@ -1,5 +1,5 @@
 FROM python:3.10
-WORKDIR app
+WORKDIR /app
 
 COPY clinic ./clinic
 COPY ./docker/requirements.txt .
