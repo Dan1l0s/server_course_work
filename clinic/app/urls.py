@@ -10,5 +10,6 @@ urlpatterns = [
     path('doctor/cancel', views.cancel),
     path('doctor/list', views.appointment_list),
     path('doctor', views.doctors_list),
-    path('clinic/create', views.create_clinic),
+    path('clinic', views.clinic),
+    path('appointments', views.self_appointment_list)
 ]

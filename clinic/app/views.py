@@ -8,7 +8,7 @@ from django.db.utils import IntegrityError
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from datetime import datetime, timedelta, time
-from .serializers import AppointmentSerializer, DoctorSerializer
+from .serializers import AppointmentSerializer, DoctorSerializer, ClinicSerializer
 
 
 @api_view(('POST',))
@@ -24,10 +24,6 @@ def create_doctor(request):
         'middle_name': request.data.get("middle_name"),
         'clinic_id': request.data.get("clinic_id")
     }
-    clinics = Clinic.objects.all()
-    for clinic in clinics:
-        print(clinic)
-    print("request id: ", data["clinic_id"])
     clinic = Clinic.objects.get(id=data['clinic_id'])
     doctor = Doctor.objects.create(first_name=data['first_name'], last_name=data['last_name'], middle_name=data['middle_name'], clinic=clinic)
 
@@ -112,14 +108,62 @@ def doctors_list(request):
     return Response(serializer.data)
 
 
-@api_view(('POST',))
-def create_clinic(request):
+@api_view(('POST', 'GET', 'PUT', 'DELETE'))
+def clinic(request):
     if not request.user:
         return Response("Authorization error, try login again!")
 
     data = {
+        'clinic_id': request.data.get("clinic_id"),
         'address': request.data.get("address")
     }
-    clinic = Clinic.objects.create(address=data['address'])
 
-    return Response('Clinic was created successfully, id: ' + str(clinic.id))
+    match request.method:
+        case "POST":
+            # if not request.user.is_staff:
+            #     return Response("Unauthorized access")
+            if not data['address']:
+                return Response("Address required!")
+            try:
+                clinic = Clinic.objects.create(address=data['address'])
+                return Response('Clinic was created successfully, id: ' + str(clinic.id))
+            except:
+                return Response("There's already a clinic with provided address")
+
+        case "PUT":
+            if not data['address'] or not data['clinic_id']:
+                return Response("ID and address required")
+            clinic = Clinic.objects.get(id=data['clinic_id'])
+            if not clinic:
+                return Response("There's no such a clinic with provided ID")
+            clinic.address = data['address']
+            clinic.save()
+            return Response("Clinic was updated successfully")
+
+        case "DELETE":
+            if not data['clinic_id']:
+                return Response("ID is required")
+            clinic = Clinic.objects.get(id=data['clinic_id'])
+            if not clinic:
+                return Response("There's no such a clinic with provided ID")
+            clinic.delete()
+            return Response("Clinic was deleted successfully")
+
+        case "GET":
+            clinic = Clinic.objects.get(id=data["clinic_id"])
+            if not clinic:
+                clinics = Clinic.objects.all()
+                serializer = ClinicSerializer(clinics, many=True)
+                return Response(serializer.data)
+            serializer = ClinicSerializer(clinic)
+            return Response(serializer.data)
+
+
+@api_view(('GET',))
+def self_appointment_list(request):
+    if not request.user:
+        return Response("Authorization error, try login again!")
+    appointments = Appointment.objects.filter(user=request.user)
+    print(appointments)
+    serializer = AppointmentSerializer(appointments, many=True)
+    return Response(serializer.data)
