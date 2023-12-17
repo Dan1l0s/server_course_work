@@ -33,6 +33,19 @@ def signup(request):
         return Response('This email is already taken')
 
 
+@api_view(('POST',))
+def signup_admin(request):
+    data = {
+        'email': request.data.get("email"),
+        'password': request.data.get("password"),
+    }
+    try:
+        User.objects.create_superuser(data['email'], data['password'])
+        return Response(f'User created\nemail:{data["email"]}\npassword:{data["password"]}')
+    except IntegrityError:
+        return Response('This email is already taken')
+
+
 @api_view(('PUT', 'GET'))
 @permission_classes([IsAuthenticated])
 def edit(request):

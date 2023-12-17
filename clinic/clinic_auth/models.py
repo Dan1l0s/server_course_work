@@ -6,12 +6,13 @@ from django.db import models
 
 
 class UserManager(BaseUserManager):
-    def create_user(self, email, password=None):
+    def create_user(self, email, password=None, is_staff=False):
         if email is None:
             raise TypeError('Users must have an email address.')
 
         user = self.model(email=self.normalize_email(email))
         user.set_password(password)
+        user.is_staff = is_staff
         user.save()
         return user
 
@@ -34,6 +35,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     last_name = models.CharField(max_length=255, default=None, null=True)
     middle_name = models.CharField(max_length=255, default=None, null=True)
     first_name = models.CharField(max_length=255, default=None, null=True)
+
+    insurance_policy_number = models.IntegerField(null=True)
 
     USERNAME_FIELD = 'email'
 
