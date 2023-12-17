@@ -36,7 +36,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     middle_name = models.CharField(max_length=255, default=None, null=True)
     first_name = models.CharField(max_length=255, default=None, null=True)
 
-    insurance_policy_number = models.IntegerField(null=True)
+    birthday = models.DateField(null=True)
+    insurance_policy_number = models.CharField(max_length=16, null=True)
 
     USERNAME_FIELD = 'email'
 
@@ -57,7 +58,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     def get_short_name(self):
         if not self.last_name:
             return self.email
-        return f'{self.last_name} {self.first_name[0]}. {self.middle_name[0]}'
+        return f'{self.last_name} {self.first_name[0]}.{self.middle_name[0]}.'
 
     def _generate_jwt_token(self):
         dt = datetime.now() + timedelta(days=1)

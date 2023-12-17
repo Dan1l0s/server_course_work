@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, time
 
 from .models import Doctor, Appointment, Clinic
 from .serializers import AppointmentSerializer, DoctorSerializer, ClinicSerializer
-from .permissions import IsAdminOrReadOnly
+from .permissions import IsAdminOrReadOnly, IsAuthenticated
 
 
 @api_view(('POST', 'GET', 'PUT', 'DELETE'))
@@ -24,8 +24,6 @@ def doctor(request):
 
     match request.method:
         case "POST":
-            # if not request.user.is_staff:
-            #     return Response("Unauthorized access")
             if not data['last_name'] or not data["first_name"] or not data["middle_name"]:
                 return Response("Full name required!")
             try:
@@ -105,8 +103,6 @@ def clinic(request):
 
     match request.method:
         case "POST":
-            # if not request.user.is_staff:
-            #     return Response("Unauthorized access")
             if not data['address']:
                 return Response("Address required!")
             try:
@@ -148,7 +144,7 @@ def clinic(request):
 
 
 @api_view(('POST',))
-@permission_classes([IsAdminOrReadOnly])
+@permission_classes([IsAuthenticated])
 def book(request):
     if not request.user:
         return Response("Authorization error, try login again!")
@@ -166,7 +162,7 @@ def book(request):
 
 
 @api_view(('POST',))
-@permission_classes([IsAdminOrReadOnly])
+@permission_classes([IsAuthenticated])
 def cancel(request):
     if not request.user:
         return Response("Authorization error, try login again!")
@@ -187,7 +183,7 @@ def cancel(request):
 
 
 @api_view(('GET',))
-@permission_classes([IsAdminOrReadOnly])
+@permission_classes([IsAuthenticated])
 def appointment_list(request):
     if not request.user:
         return Response("Authorization error, try login again!")
@@ -208,7 +204,7 @@ def appointment_list(request):
 
 
 @api_view(('GET',))
-@permission_classes([IsAdminOrReadOnly])
+@permission_classes([IsAuthenticated])
 def self_appointment_list(request):
     if not request.user:
         return Response("Authorization error, try login again!")

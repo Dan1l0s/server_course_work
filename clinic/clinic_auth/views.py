@@ -4,6 +4,7 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 
 from app.permissions import IsAuthenticated
+from .serializers import UserSerializer
 from .models import User
 
 
@@ -15,7 +16,7 @@ def login(request):
     }
     user = authenticate(username=data['email'], password=data['password'])
     if user:
-        return Response(user.token)
+        return Response(f'Login successful, your token: \'{user.token}\'')
     else:
         return Response("Incorrect email or password!")
 
@@ -27,8 +28,9 @@ def signup(request):
         'password': request.data.get("password"),
     }
     try:
-        User.objects.create_user(data['email'], data['password'])
-        return Response(f'User created\nemail:{data["email"]}\npassword:{data["password"]}')
+        user = User.objects.create_user(data['email'], data['password'])
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
     except IntegrityError:
         return Response('This email is already taken')
 
@@ -40,8 +42,9 @@ def signup_admin(request):
         'password': request.data.get("password"),
     }
     try:
-        User.objects.create_superuser(data['email'], data['password'])
-        return Response(f'User created\nemail:{data["email"]}\npassword:{data["password"]}')
+        user = User.objects.create_superuser(data['email'], data['password'])
+        serializer = UserSerializer(user)
+        return Response(serializer.data)
     except IntegrityError:
         return Response('This email is already taken')
 
@@ -54,7 +57,8 @@ def edit(request):
 
     match request.method:
         case "GET":
-            return Response(request.user.get_full_name())
+            serializer = UserSerializer(request.user)
+            return Response(serializer.data)
 
         case "PUT":
             data = {
