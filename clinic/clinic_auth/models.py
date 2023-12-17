@@ -7,8 +7,8 @@ from django.db import models
 
 class UserManager(BaseUserManager):
     def create_user(self, email, password=None, is_staff=False):
-        if email is None:
-            raise TypeError('Users must have an email address.')
+        if not email or not password:
+            raise TypeError('Users must have both email and password.')
 
         user = self.model(email=self.normalize_email(email))
         user.set_password(password)
@@ -17,8 +17,8 @@ class UserManager(BaseUserManager):
         return user
 
     def create_superuser(self, email, password):
-        if password is None:
-            raise TypeError('Superusers must have a password.')
+        if not email or not password:
+            raise TypeError('Users must have both email and password.')
 
         user = self.create_user(email, password)
         user.is_superuser = True

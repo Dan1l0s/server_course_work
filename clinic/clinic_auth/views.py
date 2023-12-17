@@ -9,19 +9,6 @@ from .models import User
 
 
 @api_view(('POST',))
-def login(request):
-    data = {
-        'email': request.data.get("email"),
-        'password': request.data.get("password")
-    }
-    user = authenticate(username=data['email'], password=data['password'])
-    if user:
-        return Response(f'Login successful, your token: \'{user.token}\'')
-    else:
-        return Response("Incorrect email or password!")
-
-
-@api_view(('POST',))
 def signup(request):
     data = {
         'email': request.data.get("email"),
@@ -33,6 +20,19 @@ def signup(request):
         return Response(serializer.data)
     except IntegrityError:
         return Response('This email is already taken')
+
+
+@api_view(('POST',))
+def login(request):
+    data = {
+        'email': request.data.get("email"),
+        'password': request.data.get("password")
+    }
+    user = authenticate(username=data['email'], password=data['password'])
+    if user:
+        return Response(f'Login successful, your token: \'{user.token}\'')
+    else:
+        return Response("Incorrect email or password!")
 
 
 @api_view(('POST',))
