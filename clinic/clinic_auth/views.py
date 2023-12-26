@@ -54,8 +54,11 @@ class UserEditView(APIView):
     def get(self, request):
         if not request.user:
             return Response("Authorization error, try login again!")
+        else:
+            serializer = UserSerializer(request.user)
+            return Response(serializer.data)
 
-    def post(self, request):
+    def put(self, request):
         if not request.user:
             return Response("Authorization error, try login again!")
         data = {
