@@ -1,6 +1,7 @@
 from django.db.models import Q
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
+from rest_framework.views import APIView
 from datetime import datetime, timedelta, time
 
 from .models import Doctor, Appointment, Clinic
@@ -8,139 +9,189 @@ from .serializers import AppointmentSerializer, DoctorSerializer, ClinicSerializ
 from .permissions import IsAdminOrReadOnly, IsAuthenticated
 
 
-@api_view(('POST', 'GET', 'PUT', 'DELETE'))
-@permission_classes([IsAdminOrReadOnly])
-def doctor(request):
-    if not request.user:
-        return Response("Authorization error, try login again!")
+class DoctorView(APIView):
+    permission_classes = [IsAdminOrReadOnly]
 
-    data = {
-        'doctor_id': request.data.get("doctor_id"),
-        'first_name': request.data.get("first_name"),
-        'last_name': request.data.get("last_name"),
-        'middle_name': request.data.get("middle_name"),
-        'clinic_id': request.data.get("clinic_id")
-    }
+    def get(self, request):
+        if not request.user:
+            return Response("Authorization error, try login again!")
 
-    match request.method:
-        case "POST":
-            if not data['last_name'] or not data["first_name"] or not data["middle_name"]:
-                return Response("Full name required!")
-            try:
-                clinic = Clinic.objects.get(id=data['clinic_id'])
-            except Clinic.DoesNotExist:
-                return Response("Incorrect clinic ID!")
+        data = {
+            'doctor_id': request.data.get("doctor_id"),
+            'first_name': request.data.get("first_name"),
+            'last_name': request.data.get("last_name"),
+            'middle_name': request.data.get("middle_name"),
+            'clinic_id': request.data.get("clinic_id")
+        }
+        try:
+            doctor = Doctor.objects.get(id=data['doctor_id'])
+            serializer = DoctorSerializer(doctor)
+            return Response(serializer.data)
+        except Doctor.DoesNotExist:
+            pass
 
-            doctor = Doctor.objects.create(first_name=data['first_name'], last_name=data['last_name'], middle_name=data['middle_name'], clinic=clinic)
-            return Response('Doctor was created successfully, id: ' + str(doctor.id))
-
-        case "PUT":
-            if not data['doctor_id']:
-                return Response("Doctor ID is required!")
-            if not data['last_name'] and not data['first_name'] and not data['middle_name'] and not data['clinic_id']:
-                return Response("No data provided to change!")
-
-            try:
-                doctor = Doctor.objects.get(id=data['doctor_id'])
-            except Doctor.DoesNotExist:
-                return Response("Incorrect doctor ID!")
-
-            if data['clinic_id']:
-                try:
-                    clinic = Clinic.objects.get(id=data['clinic_id'])
-                    doctor.clinic = clinic
-                except Clinic.DoesNotExist:
-                    if not data['last_name'] and not data['first_name'] and not data['middle_name']:
-                        return Response("Incorrect clinic ID")
-
-            if data['first_name']:
-                doctor.first_name = data['first_name']
-            if data['last_name']:
-                doctor.last_name = data['last_name']
-            if data['middle_name']:
-                doctor.middle_name = data['middle_name']
-            doctor.save()
-            return Response("Doctor was updated successfully")
-
-        case "DELETE":
-            if not data['doctor_id']:
-                return Response("ID is required")
-            try:
-                doctor = Doctor.objects.get(id=data['doctor_id'])
-                doctor.delete()
-                return Response("Doctor was deleted successfully")
-            except Doctor.DoesNotExist:
-                return Response("There's no such a doctor with provided ID")
-
-        case "GET":
-            try:
-                doctor = Doctor.objects.get(id=data['doctor_id'])
-                serializer = DoctorSerializer(doctor)
-                return Response(serializer.data)
-            except Doctor.DoesNotExist:
-                pass
-
-            doctors = Doctor.objects.filter(clinic__id=data['clinic_id'])
-            if not doctors:
-                doctors = Doctor.objects.all()
-                serializer = DoctorSerializer(doctors, many=True)
-                return Response(serializer.data)
-
+        doctors = Doctor.objects.filter(clinic__id=data['clinic_id'])
+        if not doctors:
+            doctors = Doctor.objects.all()
             serializer = DoctorSerializer(doctors, many=True)
             return Response(serializer.data)
 
+        serializer = DoctorSerializer(doctors, many=True)
+        return Response(serializer.data)
 
-@api_view(('POST', 'GET', 'PUT', 'DELETE'))
-@permission_classes([IsAdminOrReadOnly])
-def clinic(request):
-    if not request.user:
-        return Response("Authorization error, try login again!")
+    def post(self, request):
+        if not request.user:
+            return Response("Authorization error, try login again!")
 
-    data = {
-        'clinic_id': request.data.get("clinic_id"),
-        'address': request.data.get("address")
-    }
+        data = {
+            'doctor_id': request.data.get("doctor_id"),
+            'first_name': request.data.get("first_name"),
+            'last_name': request.data.get("last_name"),
+            'middle_name': request.data.get("middle_name"),
+            'clinic_id': request.data.get("clinic_id")
+        }
 
-    match request.method:
-        case "POST":
-            if not data['address']:
-                return Response("Address required!")
-            try:
-                clinic = Clinic.objects.create(address=data['address'])
-                return Response('Clinic was created successfully, id: ' + str(clinic.id))
-            except:
-                return Response("There's already a clinic with provided address")
+        if not data['last_name'] or not data["first_name"] or not data["middle_name"]:
+            return Response("Full name required!")
+        try:
+            clinic = Clinic.objects.get(id=data['clinic_id'])
+        except Clinic.DoesNotExist:
+            return Response("Incorrect clinic ID!")
 
-        case "PUT":
-            if not data['address'] or not data['clinic_id']:
-                return Response("ID and address required")
+        doctor = Doctor.objects.create(first_name=data['first_name'], last_name=data['last_name'], middle_name=data['middle_name'], clinic=clinic)
+        return Response('Doctor was created successfully, id: ' + str(doctor.id))
+
+    def put(self, request):
+        if not request.user:
+            return Response("Authorization error, try login again!")
+
+        data = {
+            'doctor_id': request.data.get("doctor_id"),
+            'first_name': request.data.get("first_name"),
+            'last_name': request.data.get("last_name"),
+            'middle_name': request.data.get("middle_name"),
+            'clinic_id': request.data.get("clinic_id")
+        }
+
+        if not data['doctor_id']:
+            return Response("Doctor ID is required!")
+        if not data['last_name'] and not data['first_name'] and not data['middle_name'] and not data['clinic_id']:
+            return Response("No data provided to change!")
+
+        try:
+            doctor = Doctor.objects.get(id=data['doctor_id'])
+        except Doctor.DoesNotExist:
+            return Response("Incorrect doctor ID!")
+
+        if data['clinic_id']:
             try:
                 clinic = Clinic.objects.get(id=data['clinic_id'])
+                doctor.clinic = clinic
             except Clinic.DoesNotExist:
-                return Response("There's no such a clinic with provided ID")
-            clinic.address = data['address']
-            clinic.save()
-            return Response("Clinic was updated successfully")
+                if not data['last_name'] and not data['first_name'] and not data['middle_name']:
+                    return Response("Incorrect clinic ID")
 
-        case "DELETE":
-            if not data['clinic_id']:
-                return Response("ID is required")
-            try:
-                clinic = Clinic.objects.get(id=data['clinic_id'])
-            except Clinic.DoesNotExist:
-                return Response("There's no such a clinic with provided ID")
-            clinic.delete()
-            return Response("Clinic was deleted successfully")
+        if data['first_name']:
+            doctor.first_name = data['first_name']
+        if data['last_name']:
+            doctor.last_name = data['last_name']
+        if data['middle_name']:
+            doctor.middle_name = data['middle_name']
+        doctor.save()
+        return Response("Doctor was updated successfully")
 
-        case "GET":
-            try:
-                clinic = Clinic.objects.get(id=data["clinic_id"])
-                serializer = ClinicSerializer(clinic)
-                return Response(serializer.data)
-            except Clinic.DoesNotExist:
-                clinics = Clinic.objects.all()
-                serializer = ClinicSerializer(clinics, many=True)
-                return Response(serializer.data)
+    def delete(self, request):
+        if not request.user:
+            return Response("Authorization error, try login again!")
+
+        data = {
+            'doctor_id': request.data.get("doctor_id"),
+        }
+
+        if not data['doctor_id']:
+            return Response("ID is required")
+        try:
+            doctor = Doctor.objects.get(id=data['doctor_id'])
+            doctor.delete()
+            return Response("Doctor was deleted successfully")
+        except Doctor.DoesNotExist:
+            return Response("There's no such a doctor with provided ID")
+
+
+class ClinicView(APIView):
+    permission_classes = [IsAdminOrReadOnly]
+
+    def get(self, request):
+        if not request.user:
+            return Response("Authorization error, try login again!")
+
+        data = {
+            'clinic_id': request.data.get("clinic_id"),
+            'address': request.data.get("address")
+        }
+
+        try:
+            clinic = Clinic.objects.get(id=data["clinic_id"])
+            serializer = ClinicSerializer(clinic)
+            return Response(serializer.data)
+        except Clinic.DoesNotExist:
+            clinics = Clinic.objects.all()
+            serializer = ClinicSerializer(clinics, many=True)
+            return Response(serializer.data)
+
+    def post(self, request):
+        if not request.user:
+            return Response("Authorization error, try login again!")
+
+        data = {
+            'clinic_id': request.data.get("clinic_id"),
+            'address': request.data.get("address")
+        }
+
+        if not data['address']:
+            return Response("Address required!")
+        try:
+            clinic = Clinic.objects.create(address=data['address'])
+            return Response('Clinic was created successfully, id: ' + str(clinic.id))
+        except:
+            return Response("There's already a clinic with provided address")
+
+    def put(self, request):
+        if not request.user:
+            return Response("Authorization error, try login again!")
+
+        data = {
+            'clinic_id': request.data.get("clinic_id"),
+            'address': request.data.get("address")
+        }
+
+        if not data['address'] or not data['clinic_id']:
+            return Response("ID and address required")
+        try:
+            clinic = Clinic.objects.get(id=data['clinic_id'])
+        except Clinic.DoesNotExist:
+            return Response("There's no such a clinic with provided ID")
+        clinic.address = data['address']
+        clinic.save()
+        return Response("Clinic was updated successfully")
+
+    def delete(self, request):
+        if not request.user:
+            return Response("Authorization error, try login again!")
+
+        data = {
+            'clinic_id': request.data.get("clinic_id"),
+            'address': request.data.get("address")
+        }
+
+        if not data['clinic_id']:
+            return Response("ID is required")
+        try:
+            clinic = Clinic.objects.get(id=data['clinic_id'])
+        except Clinic.DoesNotExist:
+            return Response("There's no such a clinic with provided ID")
+        clinic.delete()
+        return Response("Clinic was deleted successfully")
 
 
 @api_view(('POST',))
